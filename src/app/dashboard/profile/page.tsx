@@ -108,8 +108,8 @@ export default function ProfilePage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
                 className="w-full h-12 bg-black/40 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-neutral-600"
+                placeholder=""
               />
             </div>
 
@@ -121,8 +121,8 @@ export default function ProfilePage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@panel.com"
                 className="w-full h-12 bg-black/40 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-neutral-600"
+                placeholder=""
               />
             </div>
 

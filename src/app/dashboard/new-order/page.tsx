@@ -293,7 +293,7 @@ export default function NewOrderPage() {
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
                   required
-                  placeholder="https://instagram.com/p/..."
+                  placeholder=""
                   className="w-full h-12 bg-background border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/50 placeholder:font-medium"
                 />
               </div>
