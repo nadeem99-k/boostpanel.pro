@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://boost-panel.com"),
   title: "Boost - Premium SMM Panel",
   description: "Your ultimate source for real social media growth and premium services.",
+  manifest: "/manifest.json",
+  themeColor: "#A855F7",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BoostPanel",
+  },
   openGraph: {
     title: "Boost - Premium SMM Panel",
     description: "Grow your social presence exponentially with our wholesale SMM services.",

@@ -22,7 +22,8 @@ import {
   Zap,
   XCircle,
   Globe,
-  Activity
+  Activity,
+  Bell
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 
@@ -48,6 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [broadcast, setBroadcast] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const load = () => {
@@ -60,6 +62,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setInitials(label ? label.charAt(0).toUpperCase() : "U");
         setIsAdmin(email === "nadeemalikalhoro310@gmail.com");
         setBroadcast(localStorage.getItem("smm_broadcast") || "");
+        const notes = JSON.parse(localStorage.getItem("smm_notifications") || "[]");
+        setUnreadCount(notes.filter((n: any) => !n.read).length);
       } catch { /* ignore */ }
     };
     load();
@@ -188,6 +192,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <span className="font-bold text-white text-sm">Rs. {balance.toFixed(2)}</span>
             </div>
+            
+            <Link 
+              href="/dashboard/notifications" 
+              className="relative w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all"
+            >
+               <Bell className="w-5 h-5" />
+               {unreadCount > 0 && (
+                 <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black border-2 border-background">
+                    {unreadCount}
+                 </span>
+               )}
+            </Link>
+
             <Link
               href="/dashboard/profile"
               className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity"

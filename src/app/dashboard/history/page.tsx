@@ -12,6 +12,13 @@ interface Order {
   charge: number;
   status: "Pending" | "In Progress" | "Completed" | "Cancelled";
   created_at: string;
+  start_count?: number;
+  remains?: number;
+  dripfeed?: {
+    runs: number;
+    interval: number;
+    current_run: number;
+  } | null;
 }
 
 const STATUS_STYLING = {
@@ -93,14 +100,29 @@ export default function HistoryPage() {
                         <p className="text-[10px] text-muted-foreground font-bold uppercase">{order.quantity} units</p>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex justify-center">
+                        <div className="flex flex-col items-center gap-1.5">
                           <span className={`px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${STATUS_STYLING[order.status]}`}>
                             {order.status}
                           </span>
+                          {order.status === "In Progress" && (
+                            <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden">
+                               <motion.div 
+                                 initial={{ width: 0 }}
+                                 animate={{ width: `${((order.quantity - (order.remains || 0)) / order.quantity) * 100}%` }}
+                                 className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                               />
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right text-xs text-muted-foreground font-medium">
-                        {new Date(order.created_at).toLocaleDateString()}
+                      <td className="px-6 py-4 text-right">
+                         <div className="text-xs text-muted-foreground font-medium">{new Date(order.created_at).toLocaleDateString()}</div>
+                         {order.status !== 'Pending' && (
+                           <div className="flex justify-end gap-3 mt-1 opacity-60">
+                              <div className="text-[9px] font-bold"><span className="text-muted-foreground uppercase mr-1">Start:</span>{order.start_count ?? 0}</div>
+                              <div className="text-[9px] font-bold"><span className="text-muted-foreground uppercase mr-1">Remains:</span>{order.remains ?? 0}</div>
+                           </div>
+                         )}
                       </td>
                     </motion.tr>
                   ))}
@@ -143,6 +165,26 @@ export default function HistoryPage() {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mb-1 opacity-50">Target URL</p>
                     <p className="text-xs text-primary truncate max-w-full font-medium">{order.link}</p>
                   </div>
+
+                  {order.status === "In Progress" && (
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-blue-400/60">
+                          <span>Progress</span>
+                          <span>{Math.round(((order.quantity - (order.remains || 0)) / order.quantity) * 100)}%</span>
+                       </div>
+                       <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                          <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: `${((order.quantity - (order.remains || 0)) / order.quantity) * 100}%` }}
+                             className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                          />
+                       </div>
+                       <div className="flex justify-between text-[9px] font-black uppercase tracking-widest opacity-40">
+                          <span>Start: {order.start_count}</span>
+                          <span>Remains: {order.remains}</span>
+                       </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>

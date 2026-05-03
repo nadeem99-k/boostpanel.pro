@@ -110,6 +110,9 @@ export default function NewOrderPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [isDripFeed, setIsDripFeed] = useState(false);
+  const [runs, setRuns] = useState<number | "">("");
+  const [intervalTime, setIntervalTime] = useState<number | "">("");
 
   // Load services from local API
   useEffect(() => {
@@ -148,7 +151,9 @@ export default function NewOrderPage() {
 
   const calculateCharge = () => {
     if (!selectedService || !quantity) return 0;
-    return (selectedService.rate / 1000) * (quantity as number);
+    const cfg = JSON.parse(localStorage.getItem("smm_system_config") || "{}");
+    const margin = (cfg.margin || 20) / 100;
+    return (selectedService.rate * (1 + margin) / 1000) * (quantity as number);
   };
 
   const handleOrder = async (e: React.FormEvent) => {
@@ -157,7 +162,8 @@ export default function NewOrderPage() {
     setError(null);
     setSuccess(false);
 
-    const charge = calculateCharge();
+    const totalRuns = isDripFeed ? Number(runs || 1) : 1;
+    const charge = calculateCharge() * totalRuns;
 
     if (balance < charge) {
       setError("Insufficient balance. Please add funds to your account.");
@@ -181,6 +187,7 @@ export default function NewOrderPage() {
       charge,
       status: "Pending",
       created_at: new Date().toISOString(),
+      dripfeed: isDripFeed ? { runs: Number(runs), interval: Number(intervalTime), current_run: 1 } : null
     };
 
     // Save to localStorage
@@ -205,11 +212,16 @@ export default function NewOrderPage() {
      icon: getCategoryIcon(c)
   }));
 
-  const serviceOptions = filteredServices.map(s => ({
-     label: `${s.name} — Rs. ${s.rate} / 1000`,
-     value: s.id,
-     icon: getCategoryIcon(s.category)
-  }));
+  const serviceOptions = filteredServices.map(s => {
+     const cfg = JSON.parse(localStorage.getItem("smm_system_config") || "{}");
+     const margin = (cfg.margin || 20) / 100;
+     const finalRate = s.rate * (1 + margin);
+     return {
+        label: `${s.name} — Rs. ${finalRate.toFixed(2)} / 1000`,
+        value: s.id,
+        icon: getCategoryIcon(s.category)
+     };
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -298,6 +310,58 @@ export default function NewOrderPage() {
                 />
               </div>
 
+              {/* Drip-Feed Toggle */}
+              <div className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                 <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                       <input 
+                         type="checkbox" 
+                         checked={isDripFeed} 
+                         onChange={(e) => setIsDripFeed(e.target.checked)}
+                         className="sr-only peer"
+                       />
+                       <div className="w-10 h-6 bg-white/10 rounded-full peer-checked:bg-primary transition-all" />
+                       <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4" />
+                    </div>
+                    <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Enable Drip-Feed</span>
+                 </label>
+
+                 <AnimatePresence>
+                    {isDripFeed && (
+                       <motion.div 
+                         initial={{ height: 0, opacity: 0 }}
+                         animate={{ height: "auto", opacity: 1 }}
+                         exit={{ height: 0, opacity: 0 }}
+                         className="grid grid-cols-2 gap-4 overflow-hidden"
+                       >
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Runs</label>
+                             <input 
+                               type="number" 
+                               value={runs} 
+                               onChange={(e) => setRuns(Number(e.target.value))}
+                               placeholder="e.g. 5"
+                               className="w-full h-11 bg-background border border-border rounded-xl px-4 text-sm focus:outline-none focus:border-primary/50"
+                             />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Interval (min)</label>
+                             <input 
+                               type="number" 
+                               value={intervalTime} 
+                               onChange={(e) => setIntervalTime(Number(e.target.value))}
+                               placeholder="e.g. 30"
+                               className="w-full h-11 bg-background border border-border rounded-xl px-4 text-sm focus:outline-none focus:border-primary/50"
+                             />
+                          </div>
+                          <p className="col-span-2 text-[10px] text-muted-foreground font-medium italic">
+                             Total Quantity: {(Number(quantity || 0) * Number(runs || 0)).toLocaleString()} units
+                          </p>
+                       </motion.div>
+                    )}
+                 </AnimatePresence>
+              </div>
+
               {/* Quantity */}
               <div className="space-y-3">
                 <label className="text-sm font-bold text-foreground">Quantity</label>
@@ -355,8 +419,8 @@ export default function NewOrderPage() {
               </span>
             </div>
             <div className="flex justify-between items-center pb-4 border-b border-border">
-              <span className="text-muted-foreground text-sm font-semibold">Quantity</span>
-              <span className="font-bold text-foreground">{quantity || 0}</span>
+              <span className="text-muted-foreground text-sm font-semibold">Total Quantity</span>
+              <span className="font-bold text-foreground">{(Number(quantity || 0) * (isDripFeed ? Number(runs || 1) : 1)).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-foreground font-bold">Total Charge</span>

@@ -16,6 +16,13 @@ interface Order {
   charge: number;
   status: string;
   created_at: string;
+  start_count?: number;
+  remains?: number;
+  dripfeed?: {
+    runs: number;
+    interval: number;
+    current_run: number;
+  } | null;
 }
 
 interface Deposit {
@@ -155,11 +162,42 @@ export default function AdminPanel() {
        const updated = o.map((order: Order) => {
           if (order.status === "Pending") {
              changed = true;
-             return { ...order, status: "In Progress" };
+             return { 
+                ...order, 
+                status: "In Progress", 
+                start_count: Math.floor(Math.random() * 10000), 
+                remains: order.quantity 
+             };
           }
           if (order.status === "In Progress") {
              changed = true;
-             return { ...order, status: "Completed" };
+             const deliveryStep = Math.ceil(order.quantity / 5);
+             const newRemains = Math.max(0, (order.remains || order.quantity) - deliveryStep);
+             
+             if (newRemains === 0) {
+                if (order.dripfeed && order.dripfeed.current_run < order.dripfeed.runs) {
+                   // Move to next drip run
+                   return { 
+                      ...order, 
+                      remains: order.quantity, 
+                      dripfeed: { ...order.dripfeed, current_run: order.dripfeed.current_run + 1 } 
+                   };
+                }
+
+                // Add notification
+                const notes = JSON.parse(localStorage.getItem("smm_notifications") || "[]");
+                notes.push({
+                   id: Math.random().toString(36).substr(2, 9),
+                   type: "order",
+                   title: "Order Completed",
+                   message: `Your order for ${order.service} has been successfully delivered.`,
+                   created_at: new Date().toISOString(),
+                   read: false
+                });
+                localStorage.setItem("smm_notifications", JSON.stringify(notes));
+                return { ...order, status: "Completed", remains: 0 };
+             }
+             return { ...order, remains: newRemains };
           }
           return order;
        });
@@ -315,11 +353,11 @@ export default function AdminPanel() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-           <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
-              {["orders", "deposits", "child", "tickets", "services", "users", "system"].map((tab) => (
+            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
+              {["orders", "deposits", "child", "tickets", "services", "users", "stats", "system"].map((tab) => (
                 <button 
                   key={tab} onClick={() => setActiveTab(tab as any)}
-                  className={`flex-1 py-3 px-4 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap ${activeTab === tab ? "bg-white/10 text-white shadow-xl" : "text-muted-foreground"}`}
+                  className={`flex-1 py-3 px-4 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap ${activeTab === tab ? "bg-white/10 text-white shadow-xl" : "text-neutral-400 hover:text-white"}`}
                 >
                   {tab}
                 </button>
