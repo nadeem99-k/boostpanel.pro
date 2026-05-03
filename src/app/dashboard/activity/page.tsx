@@ -10,7 +10,7 @@ interface Transaction {
   amount: number;
   description: string;
   created_at: string;
-  status: "Completed" | "Pending" | "Cancelled";
+  status: "Completed" | "Pending" | "Cancelled" | "Approved";
 }
 
 export default function ActivityPage() {
